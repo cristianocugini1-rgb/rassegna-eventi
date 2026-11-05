@@ -173,14 +173,17 @@
   .cella.fuori { visibility:hidden; }
   .cella.con { background:rgba(255,255,255,.06); cursor:pointer; }
   .cella.oggi { border-color:var(--accento); }
-  .cella.scelta { background:linear-gradient(135deg, #ff5fd2 0%, #ffd56b 45%, #45f0b8 100%); border-color:transparent;
-                  box-shadow:0 6px 22px rgba(255,95,210,.35); }
+  .cella.scelta { background:linear-gradient(135deg, #ffe14d 0%, #ffb627 45%, #45f0b8 100%); border-color:transparent;
+                  box-shadow:0 6px 22px rgba(255,190,40,.35); }
   .cella.scelta b, .cella.scelta i { color:#14131a; }
   .scelto-testa { margin:22px 2px 12px; }
   .scelto-testa h3 { margin:0; font:400 1.6rem/1.1 var(--serif); }
   .scelto-testa .etichetta { display:block; margin-top:3px; }
   .ev { background:rgba(28,29,37,.82); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
-  #cristalli { position:fixed; inset:0; width:100%; height:100%; z-index:-1; pointer-events:none; opacity:.72; }
+  body::after { content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+                background:linear-gradient(90deg, transparent 0%, rgba(13,13,18,.55) 22%, rgba(13,13,18,.62) 50%, rgba(13,13,18,.55) 78%, transparent 100%); }
+  .etichetta, .marchio, .aggiornato, section > h2, .scelto-testa h3 { text-shadow:0 1px 10px rgba(0,0,0,.9), 0 0 2px rgba(0,0,0,.8); }
+  #cristalli { position:fixed; inset:0; width:100%; height:100%; z-index:-1; pointer-events:none; opacity:.85; }
   .vuoto { text-align:center; color:var(--tenue); padding:60px 20px; }
   .vuoto h2 { color:var(--bianco); font:400 1.6rem var(--serif); }
   footer { font-size:.74rem; color:var(--tenue); text-align:center; padding:0 24px 34px; max-width:600px; margin:0 auto; }
@@ -522,9 +525,12 @@ function cristalli() {
   let seme = 7;
   const caso = () => (seme = (seme * 16807) % 2147483647) / 2147483647;
   const W = innerWidth, H = Math.max(innerHeight, 700), M = Math.min(W, 900);
-  const PALETTE = [["#ff4fd8","#ffd36e","#43f0b5"], ["#5b8cff","#c86bff","#ff6fa5"],
-                   ["#ffe36e","#3fe0c5","#7a5cff"], ["#ff8a3d","#ff3fa4","#5ad1ff"], ["#43f0b5","#5b8cff","#ff4fd8"]];
-  const GRUPPI = [[1.0,.05,.44],[-.05,.34,.34],[1.04,.58,.3],[.0,.86,.38],[.9,.99,.3],[.5,-.06,.2],[.62,.42,.14]];
+  // piu' giallo e oro, meno rosa: il rosa resta solo come accento in due combinazioni
+  const PALETTE = [["#ffe14d","#ffb627","#43f0b5"], ["#fff07a","#3fe0c5","#5b8cff"],
+                   ["#ffd23f","#7ee36b","#2ec4ff"], ["#ffb627","#ffe14d","#c86bff"],
+                   ["#43f0b5","#ffe14d","#ff8a3d"], ["#5b8cff","#ffd23f","#ff6fa5"], ["#fff07a","#ff9f43","#7a5cff"]];
+  const GRUPPI = [[1.0,.05,.44],[-.05,.34,.34],[1.04,.58,.3],[.0,.86,.38],[.9,.99,.3],[.5,-.06,.2],
+                  [.12,.08,.2],[.96,.3,.18],[.08,.6,.16],[.4,.97,.2],[.78,.74,.15]];
   let defs = "", forme = "", id = 0;
   GRUPPI.forEach(([fx, fy, fs]) => {
     const cx = fx * W, cy = fy * H, base = fs * M;
@@ -540,7 +546,7 @@ function cristalli() {
       let quadri = "";
       for (let i = 0; i < passi; i++) {        // quadrati annidati che rientrano a gradini, come nel bismuto
         const s = lato * (1 - i / (passi + 1)), sp = i * lato * 0.028;
-        quadri += `<rect x="${(-s/2 + sp).toFixed(1)}" y="${(-s/2 + sp*0.7).toFixed(1)}" width="${s.toFixed(1)}" height="${s.toFixed(1)}" rx="1.5" fill="url(#${gid})" fill-opacity="${i === 0 ? .14 : .05}" stroke="url(#${gid})" stroke-width="${(2.6 - i*0.18).toFixed(2)}"/>`;
+        quadri += `<rect x="${(-s/2 + sp).toFixed(1)}" y="${(-s/2 + sp*0.7).toFixed(1)}" width="${s.toFixed(1)}" height="${s.toFixed(1)}" rx="1.5" fill="url(#${gid})" fill-opacity="${i === 0 ? .16 : .06}" stroke="url(#${gid})" stroke-width="${(2.2 - i*0.14).toFixed(2)}" stroke-linejoin="miter"/>`;
       }
       forme += `<g transform="translate(${x.toFixed(0)} ${y.toFixed(0)}) rotate(${rot})">${quadri}</g>`;
     }
@@ -549,7 +555,7 @@ function cristalli() {
   if (!svg) { svg = document.createElementNS("http://www.w3.org/2000/svg", "svg"); svg.id = "cristalli"; svg.setAttribute("aria-hidden", "true"); document.body.prepend(svg); }
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   svg.setAttribute("preserveAspectRatio", "xMidYMid slice");
-  svg.innerHTML = `<defs>${defs}<filter id="luce"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><g filter="url(#luce)">${forme}</g>`;
+  svg.innerHTML = `<defs>${defs}<filter id="luce"><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><g filter="url(#luce)">${forme}</g>`;
 }
 cristalli();
 let larghezza = innerWidth;
