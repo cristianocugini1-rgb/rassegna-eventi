@@ -1,5 +1,5 @@
 // Tiene in memoria l'app per aprirla anche senza rete; gli eventi si chiedono sempre prima alla rete.
-const CACHE = "eventi-v4";
+const CACHE = "eventi-v5";
 const GUSCIO = ["./", "index.html", "manifest.json", "icona.svg", "icona-192.png", "icona-512.png"];
 
 self.addEventListener("install", e => {

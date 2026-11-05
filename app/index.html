@@ -23,7 +23,7 @@
   }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html, body { overflow-x:hidden; }
-  body { margin:0; background:var(--nero); color:var(--bianco); font:16px/1.5 var(--sans); }
+  body { margin:0; background:radial-gradient(120% 80% at 80% 0%, #1a1424 0%, #0d0d12 55%) fixed, #0d0d12; color:var(--bianco); font:16px/1.5 var(--sans); }
   a { color:inherit; }
   button { font-family:inherit; }
   .etichetta { font-size:.7rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:var(--accento); }
@@ -155,6 +155,32 @@
   details.lunghi > summary h2 { margin:4px 0 0; font:400 1.4rem/1.15 var(--serif); }
   details.lunghi[open] > summary { margin-bottom:10px; }
 
+  .cal { background:rgba(24,25,32,.72); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+         border:1px solid var(--linea); border-radius:24px; padding:16px 14px 14px; }
+  .cal-testa { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .cal-testa h3 { margin:0; font:400 1.5rem/1 var(--serif); text-transform:capitalize; }
+  .cal-freccia { width:38px; height:38px; border-radius:50%; border:1px solid var(--linea); background:transparent;
+                 color:var(--bianco); font-size:1.4rem; line-height:1; cursor:pointer; }
+  .cal-freccia:disabled { opacity:.25; cursor:default; }
+  .cal-griglia { display:grid; grid-template-columns:repeat(7, 1fr); gap:5px; }
+  .cal-sett { text-align:center; font-size:.62rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase;
+              color:var(--tenue); padding-bottom:4px; }
+  .cella { aspect-ratio:1; border-radius:13px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+           gap:2px; border:1px solid transparent; background:none; color:var(--bianco); padding:0; }
+  .cella b { font-size:1rem; font-weight:700; }
+  .cella i { font-style:normal; font-size:.6rem; font-weight:800; color:var(--accento); }
+  .cella.vuota b { font-weight:400; color:rgba(255,255,255,.26); }
+  .cella.fuori { visibility:hidden; }
+  .cella.con { background:rgba(255,255,255,.06); cursor:pointer; }
+  .cella.oggi { border-color:var(--accento); }
+  .cella.scelta { background:linear-gradient(135deg, #ff5fd2 0%, #ffd56b 45%, #45f0b8 100%); border-color:transparent;
+                  box-shadow:0 6px 22px rgba(255,95,210,.35); }
+  .cella.scelta b, .cella.scelta i { color:#14131a; }
+  .scelto-testa { margin:22px 2px 12px; }
+  .scelto-testa h3 { margin:0; font:400 1.6rem/1.1 var(--serif); }
+  .scelto-testa .etichetta { display:block; margin-top:3px; }
+  .ev { background:rgba(28,29,37,.82); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
+  #cristalli { position:fixed; inset:0; width:100%; height:100%; z-index:-1; pointer-events:none; opacity:.72; }
   .vuoto { text-align:center; color:var(--tenue); padding:60px 20px; }
   .vuoto h2 { color:var(--bianco); font:400 1.6rem var(--serif); }
   footer { font-size:.74rem; color:var(--tenue); text-align:center; padding:0 24px 34px; max-width:600px; margin:0 auto; }
@@ -202,7 +228,7 @@ const icona = c => ICONA[c] || "✦";
 const QUANDO = [["oggi","Oggi","☀"],["domani","Domani","→"],["weekend","Questo weekend","✶"],
                 ["7","Prossimi 7 giorni","7"],["30","Prossimi 30 giorni","30"],["tutto","Tutto il calendario","∞"]];
 const RAGGI = [10, 25, 50, 100];
-const stato = { quando:"30", categoria:null, raggio:100, testo:"" };
+const stato = { quando:"30", categoria:null, raggio:100, testo:"", scelto:null, mese:null };
 let DATI = null;
 
 const giorno = s => { const d = new Date(s + "T12:00:00"); d.setHours(0,0,0,0); return d; };
@@ -286,7 +312,7 @@ function scheda(e) {
 }
 
 function grande(e, d) {
-  return `<button class="grande" data-vai="${e._id}">
+  return `<button class="grande" data-vai="${e._id}" data-giornovai="${iso(d)}">
     <div class="img"><img loading="lazy" src="${esc(e.immagine)}" alt="" onerror="${NASCONDI}"><span class="pillola tag">${esc(e.categoria)}</span></div>
     <div class="testo">
       <div class="quando">${esc(nomeGiorno(d)[0])} · ${esc(breve(d, { day:"numeric", month:"short" }))}</div>
@@ -313,26 +339,20 @@ function disegna() {
   let html = scelti.length >= 2 ? `<section><span class="etichetta">In evidenza</span><h2>Da non perdere</h2>
     <div class="scorri">${scelti.map(e => grande(e, primo(e))).join("")}</div></section>` : "";
 
-  const perGiorno = new Map();
+  // per il calendario: ogni appuntamento compare in tutti i giorni in cui si svolge
+  const [, fine] = intervallo(stato.quando);
+  PERGIORNO = new Map();
   brevi.forEach(e => {
-    const d = primo(e), k = iso(d);
-    if (!perGiorno.has(k)) perGiorno.set(k, { d, ev: [] });
-    perGiorno.get(k).ev.push(e);
+    for (let d = primo(e); d <= giorno(e.al) && d <= fine; d = piu(d, 1)) {
+      const k = iso(d);
+      if (!PERGIORNO.has(k)) PERGIORNO.set(k, []);
+      PERGIORNO.get(k).push(e);
+    }
   });
-  const giorni = [...perGiorno.keys()].sort();
-  if (giorni.length) html += `<section><span class="etichetta">Calendario</span><h2>Giorno per giorno</h2>` +
-    giorni.map((k, i) => {
-      const g = perGiorno.get(k), [nome, data] = nomeGiorno(g.d);
-      g.ev.sort((x, y) => x.distanza_km - y.distanza_km);
-      const n = g.ev.length;
-      return `<details class="giorno ${k === iso(OGGI) ? "oggi" : ""}" ${i === 0 ? "open" : ""}>
-        <summary>
-          <div class="g-nome"><h3>${nome}</h3><span class="etichetta">${data} · ${n} ${n === 1 ? "evento" : "eventi"}</span></div>
-          ${anteprime(g.ev)}<span class="apri" aria-hidden="true">${GIU}</span>
-        </summary>
-        <div class="contenuto">${g.ev.map(scheda).join("")}</div>
-      </details>`;
-    }).join("") + `</section>`;
+  const chiavi = [...PERGIORNO.keys()].sort();
+  if (!PERGIORNO.has(stato.scelto)) stato.scelto = chiavi[0] || null;
+  if (stato.scelto && (!stato.mese || !stessoMese(stato.mese, giorno(stato.scelto)))) stato.mese = inizioMese(giorno(stato.scelto));
+  if (chiavi.length) html += `<section><span class="etichetta">Calendario</span><h2>Giorno per giorno</h2><div id="cal"></div></section>`;
 
   if (lunghi.length) {
     lunghi.sort((x, y) => x.distanza_km - y.distanza_km);
@@ -342,6 +362,42 @@ function disegna() {
   }
   document.getElementById("lista").innerHTML = html ||
     `<div class="vuoto"><span class="etichetta">Niente in vista</span><h2>Nessun evento con questi filtri</h2>Prova ad allargare la distanza o il periodo.</div>`;
+  if (document.getElementById("cal")) disegnaCal();
+}
+
+/* ---------- calendario ---------- */
+let PERGIORNO = new Map();
+const inizioMese = d => new Date(d.getFullYear(), d.getMonth(), 1);
+const stessoMese = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+
+function disegnaCal() {
+  const chiavi = [...PERGIORNO.keys()].sort();
+  const primoM = inizioMese(giorno(chiavi[0])), ultimoM = inizioMese(giorno(chiavi[chiavi.length - 1]));
+  const m = stato.mese, anno = m.getFullYear(), mese = m.getMonth();
+  const vuoti = (m.getDay() + 6) % 7;                      // settimana che parte da lunedi'
+  const giorniMese = new Date(anno, mese + 1, 0).getDate();
+  let celle = "";
+  for (let i = 0; i < vuoti; i++) celle += `<span class="cella fuori"></span>`;
+  for (let g = 1; g <= giorniMese; g++) {
+    const d = new Date(anno, mese, g), k = iso(d), n = (PERGIORNO.get(k) || []).length;
+    const cl = ["cella", n ? "con" : "vuota", k === iso(OGGI) ? "oggi" : "", k === stato.scelto ? "scelta" : ""].join(" ");
+    celle += n ? `<button class="${cl}" data-giorno="${k}" aria-label="${g}, ${n} eventi" aria-pressed="${k === stato.scelto}"><b>${g}</b><i>${n}</i></button>`
+               : `<span class="${cl}"><b>${g}</b></span>`;
+  }
+  const nomeMese = m.toLocaleDateString("it-IT", { month:"long", year:"numeric" });
+  const lista = (PERGIORNO.get(stato.scelto) || []).slice().sort((x, y) => x.distanza_km - y.distanza_km);
+  const [nome, data] = stato.scelto ? nomeGiorno(giorno(stato.scelto)) : ["", ""];
+  document.getElementById("cal").innerHTML = `
+    <div class="cal">
+      <div class="cal-testa">
+        <button class="cal-freccia" data-mese="-1" aria-label="Mese precedente" ${m <= primoM ? "disabled" : ""}>&lsaquo;</button>
+        <h3>${nomeMese}</h3>
+        <button class="cal-freccia" data-mese="1" aria-label="Mese successivo" ${m >= ultimoM ? "disabled" : ""}>&rsaquo;</button>
+      </div>
+      <div class="cal-griglia">${["lun","mar","mer","gio","ven","sab","dom"].map(x => `<span class="cal-sett">${x}</span>`).join("")}${celle}</div>
+    </div>
+    ${stato.scelto ? `<div class="scelto-testa"><h3>${nome}</h3><span class="etichetta">${data} · ${lista.length} ${lista.length === 1 ? "evento" : "eventi"}</span></div>
+    <div class="contenuto">${lista.map(scheda).join("")}</div>` : ""}`;
 }
 
 /* ---------- menu a tendina ---------- */
@@ -415,10 +471,20 @@ document.addEventListener("click", ev => {
   if (r) { stato.raggio = Number(r.dataset.r); disegnaCerchi(); aggiornaTutto(); return; }
   const q = t.closest(".numeri [data-q]");
   if (q) { stato.quando = q.dataset.q; aggiornaTutto(); document.getElementById("barra").scrollIntoView({ behavior:"smooth" }); return; }
+  const gg = t.closest("[data-giorno]");
+  if (gg) { stato.scelto = gg.dataset.giorno; disegnaCal(); return; }
+  const fm = t.closest("[data-mese]");
+  if (fm) {
+    const m = new Date(stato.mese); m.setMonth(m.getMonth() + Number(fm.dataset.mese)); stato.mese = m;
+    const k = [...PERGIORNO.keys()].sort().find(x => stessoMese(giorno(x), m));
+    if (k) stato.scelto = k;
+    disegnaCal(); return;
+  }
   const g = t.closest("[data-vai]");
   if (g) {
-    const art = document.querySelector(`.ev[data-id="${g.dataset.vai}"]`);
-    if (art) { art.closest("details").open = true; art.classList.add("aperta"); art.scrollIntoView({ behavior:"smooth", block:"center" }); }
+    stato.scelto = g.dataset.giornovai; stato.mese = inizioMese(giorno(stato.scelto)); disegnaCal();
+    const art = document.querySelector(`#cal .ev[data-id="${g.dataset.vai}"]`);
+    if (art) { art.classList.add("aperta"); art.scrollIntoView({ behavior:"smooth", block:"center" }); }
     return;
   }
   const b = t.closest(".ev > button");
@@ -450,6 +516,44 @@ async function avvia() {
   disegnaCerchi();
   aggiornaTutto();
 }
+
+/* ---------- sfondo: cristallizzazioni a gradini con riflessi iridescenti ---------- */
+function cristalli() {
+  let seme = 7;
+  const caso = () => (seme = (seme * 16807) % 2147483647) / 2147483647;
+  const W = innerWidth, H = Math.max(innerHeight, 700), M = Math.min(W, 900);
+  const PALETTE = [["#ff4fd8","#ffd36e","#43f0b5"], ["#5b8cff","#c86bff","#ff6fa5"],
+                   ["#ffe36e","#3fe0c5","#7a5cff"], ["#ff8a3d","#ff3fa4","#5ad1ff"], ["#43f0b5","#5b8cff","#ff4fd8"]];
+  const GRUPPI = [[1.0,.05,.44],[-.05,.34,.34],[1.04,.58,.3],[.0,.86,.38],[.9,.99,.3],[.5,-.06,.2],[.62,.42,.14]];
+  let defs = "", forme = "", id = 0;
+  GRUPPI.forEach(([fx, fy, fs]) => {
+    const cx = fx * W, cy = fy * H, base = fs * M;
+    const grani = 3 + Math.floor(caso() * 3);
+    for (let g = 0; g < grani; g++) {
+      const pal = PALETTE[Math.floor(caso() * PALETTE.length)];
+      const lato = base * (0.45 + caso() * 0.55);
+      const x = cx + (caso() - .5) * base * 0.9, y = cy + (caso() - .5) * base * 0.9;
+      const rot = Math.floor(caso() * 90) - 45;
+      const gid = "g" + (id++);
+      defs += `<linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${pal[0]}"/><stop offset=".5" stop-color="${pal[1]}"/><stop offset="1" stop-color="${pal[2]}"/></linearGradient>`;
+      const passi = 6 + Math.floor(caso() * 4);
+      let quadri = "";
+      for (let i = 0; i < passi; i++) {        // quadrati annidati che rientrano a gradini, come nel bismuto
+        const s = lato * (1 - i / (passi + 1)), sp = i * lato * 0.028;
+        quadri += `<rect x="${(-s/2 + sp).toFixed(1)}" y="${(-s/2 + sp*0.7).toFixed(1)}" width="${s.toFixed(1)}" height="${s.toFixed(1)}" rx="1.5" fill="url(#${gid})" fill-opacity="${i === 0 ? .14 : .05}" stroke="url(#${gid})" stroke-width="${(2.6 - i*0.18).toFixed(2)}"/>`;
+      }
+      forme += `<g transform="translate(${x.toFixed(0)} ${y.toFixed(0)}) rotate(${rot})">${quadri}</g>`;
+    }
+  });
+  let svg = document.getElementById("cristalli");
+  if (!svg) { svg = document.createElementNS("http://www.w3.org/2000/svg", "svg"); svg.id = "cristalli"; svg.setAttribute("aria-hidden", "true"); document.body.prepend(svg); }
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.setAttribute("preserveAspectRatio", "xMidYMid slice");
+  svg.innerHTML = `<defs>${defs}<filter id="luce"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><g filter="url(#luce)">${forme}</g>`;
+}
+cristalli();
+let larghezza = innerWidth;
+addEventListener("resize", () => { if (Math.abs(innerWidth - larghezza) > 60) { larghezza = innerWidth; cristalli(); } });
 
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
 avvia();
