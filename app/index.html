@@ -4,161 +4,359 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Eventi attorno a Parma</title>
-<meta name="theme-color" content="#1f3a5f">
+<meta name="theme-color" content="#131419">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icona.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icona-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Eventi">
 <style>
-  :root { --blu:#1f3a5f; --chiaro:#f4f1ea; --testo:#1d1d1d; --grigio:#5d5d5d; --accento:#c4572b; }
-  * { box-sizing:border-box; }
+  :root {
+    --nero:#131419; --carta:#1c1d24; --carta2:#24262f; --bianco:#f4f4f2; --tenue:#9a9ca6;
+    --linea:rgba(255,255,255,.16); --accento:#2ec4a0; --punto:#e4405f;
+  }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html, body { overflow-x:hidden; }
-  .card { overflow-wrap:anywhere; }
-  body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--chiaro); color:var(--testo); }
-  header { background:var(--blu); color:#fff; padding:calc(env(safe-area-inset-top) + 14px) 16px 12px; position:sticky; top:0; z-index:5; }
-  header h1 { margin:0; font-size:1.25rem; }
-  header p { margin:2px 0 10px; font-size:.85rem; opacity:.85; }
-  input[type=search] { width:100%; padding:10px 12px; border-radius:10px; border:0; font-size:1rem; }
-  .riga { display:flex; gap:8px; overflow-x:auto; padding:10px 16px 2px; scrollbar-width:none; }
+  body { margin:0; background:var(--nero); color:var(--bianco);
+         font:16px/1.45 "Roboto","Helvetica Neue",system-ui,-apple-system,"Segoe UI",sans-serif; }
+  a { color:inherit; }
+  .etichetta { font-size:.72rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:var(--accento); }
+  .pillola { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--linea); border-radius:999px;
+             padding:8px 15px; font-size:.9rem; color:var(--bianco); background:transparent; text-decoration:none;
+             white-space:nowrap; cursor:pointer; font-family:inherit; }
+  .pillola[aria-pressed=true] { background:var(--bianco); color:var(--nero); border-color:var(--bianco); font-weight:600; }
+  .pillola.verde { border-color:var(--accento); }
+
+  /* apertura con i cerchi della distanza */
+  .apertura { position:relative; padding:calc(env(safe-area-inset-top) + 18px) 20px 8px; text-align:center; }
+  .marchio { display:flex; justify-content:space-between; align-items:center; text-align:left; }
+  .marchio b { font-size:1.05rem; letter-spacing:.32em; font-weight:800; }
+  .marchio span { font-size:.78rem; color:var(--tenue); }
+  .cerchi { position:relative; width:min(92vw, 420px); aspect-ratio:220/232; margin:14px auto 0; }
+  .cerchi svg { position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
+  .cerchi circle.anello { fill:none; stroke:rgba(255,255,255,.28); stroke-width:1; cursor:pointer; transition:stroke .2s; }
+  .cerchi circle.anello.scelto { stroke:var(--accento); stroke-width:1.6; }
+  .cerchi text { fill:var(--tenue); font-size:10px; text-anchor:middle; font-family:inherit; cursor:pointer; }
+  .cerchi text.scelto { fill:var(--accento); font-weight:700; }
+  .cerchi h1 { position:absolute; inset:0 0 5% 0; margin:auto; height:max-content; font-size:clamp(1.9rem, 8.5vw, 2.6rem);
+               line-height:1.02; font-weight:800; letter-spacing:-.025em; transform:rotate(-4deg); pointer-events:none; }
+  .cerchi h1 i { font-style:normal; color:var(--accento); }
+  .numeri { display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin:6px 0 4px; }
+  .numeri .pillola b { font-size:1rem; }
+  .aggiornato { font-size:.75rem; color:var(--tenue); margin:10px 0 0; }
+
+  /* barra filtri */
+  .filtri { position:sticky; top:0; z-index:5; background:rgba(19,20,25,.92); backdrop-filter:blur(10px);
+            -webkit-backdrop-filter:blur(10px); padding:12px 0 8px; border-bottom:1px solid var(--linea); }
+  .cerca { margin:0 16px 10px; position:relative; }
+  .cerca input { width:100%; padding:11px 16px 11px 42px; border-radius:999px; border:1px solid var(--linea);
+                 background:var(--carta); color:var(--bianco); font-size:1rem; font-family:inherit; }
+  .cerca input::placeholder { color:var(--tenue); }
+  .cerca svg { position:absolute; left:15px; top:50%; transform:translateY(-50%); }
+  .riga { display:flex; gap:8px; overflow-x:auto; padding:0 16px 4px; scrollbar-width:none; }
   .riga::-webkit-scrollbar { display:none; }
-  .chip { flex:0 0 auto; border:1.5px solid var(--blu); background:#fff; color:var(--blu); border-radius:999px; padding:6px 12px; font-size:.9rem; cursor:pointer; }
-  .chip[aria-pressed=true] { background:var(--blu); color:#fff; }
-  main { padding:8px 16px calc(env(safe-area-inset-bottom) + 24px); max-width:760px; margin:0 auto; }
-  h2 { font-size:1rem; color:var(--blu); margin:22px 0 8px; border-bottom:2px solid var(--blu); padding-bottom:4px; }
-  .card { background:#fff; border-radius:12px; padding:12px 14px; margin:10px 0; box-shadow:0 1px 3px rgba(0,0,0,.08); }
-  .card img { width:100%; aspect-ratio:2/1; object-fit:cover; border-radius:8px; margin-bottom:8px; background:#ddd; }
-  .quando { font-weight:700; color:var(--accento); font-size:.9rem; }
-  .card h3 { margin:4px 0 2px; font-size:1.05rem; }
-  .sotto { color:var(--grigio); font-size:.9rem; margin:0 0 6px; }
-  .dove { font-size:.9rem; }
-  .desc { font-size:.9rem; line-height:1.4; margin:6px 0; }
-  .meta { display:flex; flex-wrap:wrap; gap:6px; font-size:.78rem; margin:6px 0; }
-  .meta span { background:var(--chiaro); border-radius:6px; padding:2px 8px; }
-  .azioni { display:flex; gap:14px; margin-top:6px; }
-  .azioni a { color:var(--blu); font-weight:600; font-size:.9rem; }
-  .vuoto { text-align:center; color:var(--grigio); padding:40px 10px; }
-  footer { font-size:.75rem; color:var(--grigio); text-align:center; padding:10px; }
-  select { padding:6px 10px; border-radius:999px; border:1.5px solid var(--blu); color:var(--blu); background:#fff; font-size:.9rem; }
+  .riga + .riga { margin-top:6px; }
+
+  main { padding:0 16px calc(env(safe-area-inset-bottom) + 40px); max-width:760px; margin:0 auto; }
+  section { margin-top:34px; }
+  section > .etichetta { display:block; margin-bottom:6px; }
+  section > h2 { margin:0 0 14px; font-size:1.6rem; font-weight:500; letter-spacing:-.01em; }
+
+  /* in evidenza: grandi schede con foto */
+  .scorri { display:flex; gap:14px; overflow-x:auto; scroll-snap-type:x mandatory; margin:0 -16px; padding:0 16px 6px;
+            scrollbar-width:none; }
+  .scorri::-webkit-scrollbar { display:none; }
+  .grande { flex:0 0 82%; max-width:360px; scroll-snap-align:start; background:var(--carta); border-radius:18px;
+            overflow:hidden; text-decoration:none; position:relative; cursor:pointer; border:0; padding:0; text-align:left;
+            color:var(--bianco); font-family:inherit; }
+  .grande .img { position:relative; aspect-ratio:4/3; background:var(--carta2); }
+  .grande img { width:100%; height:100%; object-fit:cover; display:block; }
+  .grande .tag { position:absolute; top:12px; right:12px; background:rgba(19,20,25,.6); backdrop-filter:blur(6px);
+                 -webkit-backdrop-filter:blur(6px); font-size:.68rem; font-weight:800; letter-spacing:.12em;
+                 text-transform:uppercase; padding:7px 12px; border-color:rgba(255,255,255,.55); }
+  .grande .testo { padding:14px 16px 16px; }
+  .grande .quando { font-size:.78rem; color:var(--accento); font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
+  .grande h3 { margin:4px 0 4px; font-size:1.2rem; font-weight:600; line-height:1.2; }
+  .grande .dove { font-size:.88rem; color:var(--tenue); }
+
+  /* elenco per giorno */
+  .giorno { display:flex; align-items:baseline; gap:10px; margin:30px 0 10px; }
+  .giorno h3 { margin:0; font-size:1.35rem; font-weight:500; }
+  .giorno .etichetta { color:var(--tenue); }
+  .giorno.oggi .etichetta { color:var(--accento); }
+  .ev { border-top:1px solid var(--linea); }
+  .ev:last-child { border-bottom:1px solid var(--linea); }
+  .ev > button { all:unset; box-sizing:border-box; display:flex; gap:14px; width:100%; padding:14px 0; cursor:pointer; align-items:center; }
+  .ev .foto { flex:0 0 64px; height:64px; border-radius:12px; object-fit:cover; background:var(--carta2); }
+  .ev .segnaposto { flex:0 0 64px; height:64px; border-radius:12px; border:1px solid var(--linea);
+                    display:grid; place-items:center; font-size:1.4rem; }
+  .ev .corpo { flex:1; min-width:0; }
+  .ev .cat { font-size:.68rem; font-weight:800; letter-spacing:.13em; text-transform:uppercase; color:var(--tenue); }
+  .ev .tit { font-size:1.02rem; font-weight:600; margin:2px 0; overflow-wrap:anywhere;
+             display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .ev .dove { font-size:.85rem; color:var(--tenue); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ev .dove b { color:var(--bianco); font-weight:600; }
+  .ev .freccia { flex:0 0 auto; width:34px; height:34px; border-radius:50%; border:1px solid var(--linea);
+                 display:grid; place-items:center; transition:transform .2s; }
+  .ev.aperta .freccia { transform:rotate(90deg); border-color:var(--accento); }
+  .ev.aperta .tit { -webkit-line-clamp:unset; }
+  .dettagli { display:none; padding:0 0 18px; }
+  .ev.aperta .dettagli { display:block; }
+  .dettagli img { width:100%; aspect-ratio:16/9; object-fit:cover; border-radius:16px; margin-bottom:12px; }
+  .dettagli p { margin:0 0 12px; color:#d7d8dc; line-height:1.55; overflow-wrap:anywhere; }
+  .info { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+  .info span { border:1px solid var(--linea); border-radius:999px; padding:4px 11px; font-size:.78rem; color:var(--tenue); }
+  .azioni { display:flex; gap:8px; flex-wrap:wrap; }
+  .azioni .pillola.piena { background:var(--bianco); color:var(--nero); border-color:var(--bianco); font-weight:600; }
+
+  details.lunghi { margin-top:40px; }
+  details.lunghi summary { list-style:none; cursor:pointer; display:flex; justify-content:space-between; align-items:center;
+                           gap:12px; padding:18px 20px; border:1px solid var(--linea); border-radius:18px; }
+  details.lunghi summary::-webkit-details-marker { display:none; }
+  details.lunghi summary h2 { margin:2px 0 0; font-size:1.25rem; font-weight:500; }
+  details.lunghi summary .pillola::after { content:"Mostra \2192"; }
+  details.lunghi[open] summary .pillola::after { content:"Nascondi"; }
+  details.lunghi[open] summary { margin-bottom:6px; }
+
+  .vuoto { text-align:center; color:var(--tenue); padding:60px 20px; }
+  .vuoto h2 { color:var(--bianco); font-weight:500; }
+  footer { font-size:.75rem; color:var(--tenue); text-align:center; padding:0 24px 34px; max-width:600px; margin:0 auto; }
 </style>
 </head>
 <body>
-<header>
-  <h1>Eventi attorno a Parma</h1>
-  <p id="info">Caricamento...</p>
-  <input type="search" id="cerca" placeholder="Cerca: sagra, concerto, Reggio..." aria-label="Cerca eventi">
+<header class="apertura">
+  <div class="marchio"><b>EVENTI</b><span id="dove-centro">Parma · 100 km</span></div>
+  <div class="cerchi" id="cerchi" aria-label="Scegli la distanza toccando un cerchio">
+    <svg viewBox="-110 -108 220 232" aria-hidden="true" id="anelli"></svg>
+    <h1>Cosa succede<br>attorno a <i>Parma</i></h1>
+  </div>
+  <div class="numeri">
+    <button class="pillola" data-q="oggi"><b id="n-oggi">·</b> oggi</button>
+    <button class="pillola" data-q="weekend"><b id="n-weekend">·</b> nel weekend</button>
+    <button class="pillola" data-q="30"><b id="n-mese">·</b> in 30 giorni</button>
+  </div>
+  <p class="aggiornato" id="info">Caricamento...</p>
 </header>
 
-<div class="riga" id="quando" role="group" aria-label="Quando"></div>
-<div class="riga">
-  <label for="raggio" style="align-self:center;font-size:.9rem">Distanza</label>
-  <select id="raggio">
-    <option value="10">entro 10 km</option>
-    <option value="25">entro 25 km</option>
-    <option value="50">entro 50 km</option>
-    <option value="100" selected>entro 100 km</option>
-  </select>
+<div class="filtri">
+  <div class="cerca">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#9a9ca6" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+    <input type="search" id="cerca" placeholder="Cerca: sagra, jazz, Reggio..." aria-label="Cerca eventi">
+  </div>
+  <div class="riga" id="quando" role="group" aria-label="Quando"></div>
+  <div class="riga" id="categorie" role="group" aria-label="Categorie"></div>
 </div>
-<div class="riga" id="categorie" role="group" aria-label="Categorie"></div>
 
 <main id="lista"></main>
 <footer id="piede"></footer>
 
 <script>
-const FILTRI_QUANDO = [
-  ["oggi", "Oggi"], ["weekend", "Questo weekend"], ["7", "Prossimi 7 giorni"],
-  ["30", "Prossimi 30 giorni"], ["tutto", "Tutto"]
-];
-const stato = { quando: "30", categoria: null, raggio: 100, testo: "" };
+const ICONA = {
+  "Musica":"♪", "Opera, teatro e danza":"🎭", "Mostre ed Arte":"🖼", "Eventi enogastronomici":"🍷",
+  "Mercatini e Mostre Mercato":"🛍", "Natale / Mercati di Natale":"🎄", "Escursioni e Visite guidate":"🥾",
+  "Eventi sportivi":"🏃", "Serate e nightlife":"🌙", "Per bambini":"🧸", "Cinema":"🎬", "Festival":"🎪",
+  "Incontri e libri":"📚", "Fiere & Congressi":"🏛", "Spettacoli di strada e tradizioni":"🎪",
+};
+const icona = c => ICONA[c] || "✦";
+const QUANDO = [["oggi","Oggi"],["domani","Domani"],["weekend","Weekend"],["7","7 giorni"],["30","30 giorni"],["tutto","Tutto"]];
+const RAGGI = [10, 25, 50, 100];
+const stato = { quando:"30", categoria:null, raggio:100, testo:"" };
 let DATI = null;
 
-const gg = d => { const x = new Date(d + "T12:00:00"); x.setHours(0,0,0,0); return x; };
-const oggi = () => { const x = new Date(); x.setHours(0,0,0,0); return x; };
-const fmt = (d, opz) => gg(d).toLocaleDateString("it-IT", opz);
+const giorno = s => { const d = new Date(s + "T12:00:00"); d.setHours(0,0,0,0); return d; };
+const OGGI = (() => { const d = new Date(); d.setHours(0,0,0,0); return d; })();
+const piu = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const iso = d => d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+const esc = s => String(s || "").replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+const breve = (d, o) => d.toLocaleDateString("it-IT", o).replace(".", "");
 
-function intervallo() {
-  const o = oggi(), fine = new Date(o);
-  if (stato.quando === "oggi") return [o, o];
-  if (stato.quando === "weekend") {
-    const g = o.getDay();               // 0 domenica, 6 sabato
-    const inizio = new Date(o);
-    if (g >= 1 && g <= 4) inizio.setDate(o.getDate() + (5 - g)); // da venerdi'
-    const dom = new Date(o); dom.setDate(o.getDate() + ((7 - g) % 7));
-    return [inizio, dom];
+function intervallo(q) {
+  if (q === "oggi") return [OGGI, OGGI];
+  if (q === "domani") return [piu(OGGI,1), piu(OGGI,1)];
+  if (q === "weekend") {
+    const g = OGGI.getDay();
+    return [(g >= 1 && g <= 4) ? piu(OGGI, 5 - g) : OGGI, piu(OGGI, (7 - g) % 7)];
   }
-  if (stato.quando === "tutto") { fine.setFullYear(o.getFullYear() + 5); return [o, fine]; }
-  fine.setDate(o.getDate() + Number(stato.quando)); return [o, fine];
+  if (q === "tutto") return [OGGI, piu(OGGI, 3650)];
+  return [OGGI, piu(OGGI, Number(q))];
 }
 
-function testoData(e) {
-  if (e.dal === e.al) return fmt(e.dal, { weekday:"long", day:"numeric", month:"long" });
-  const inCorso = gg(e.dal) <= oggi();
-  const al = fmt(e.al, { day:"numeric", month:"long", year: gg(e.al).getFullYear() !== oggi().getFullYear() ? "numeric" : undefined });
-  return inCorso ? "In corso, fino al " + al : "Dal " + fmt(e.dal, { day:"numeric", month:"long" }) + " al " + al;
+function passa(e, q, tutti = false) {
+  const [da, a] = intervallo(q);
+  const t = stato.testo.trim().toLowerCase();
+  return giorno(e.al) >= da && giorno(e.dal) <= a && (tutti || (
+    e.distanza_km <= stato.raggio &&
+    (!stato.categoria || e.categoria === stato.categoria) &&
+    (!t || [e.titolo, e.sottotitolo, e.descrizione, e.citta, e.luogo, e.categoria].join(" ").toLowerCase().includes(t))));
 }
 
-function scheda(e) {
+function nomeGiorno(d) {
+  const diff = Math.round((d - OGGI) / 86400000);
+  if (diff === 0) return ["Oggi", breve(d, { weekday:"long", day:"numeric", month:"long" })];
+  if (diff === 1) return ["Domani", breve(d, { weekday:"long", day:"numeric", month:"long" })];
+  const s = d.toLocaleDateString("it-IT", { weekday:"long" });
+  return [s.charAt(0).toUpperCase() + s.slice(1), breve(d, { day:"numeric", month:"long" })];
+}
+
+function periodo(e) {
+  const f = (s, o) => giorno(s).toLocaleDateString("it-IT", o);
+  if (e.dal === e.al) return f(e.dal, { weekday:"long", day:"numeric", month:"long" });
+  if (giorno(e.dal) <= OGGI) return "In corso fino al " + f(e.al, { day:"numeric", month:"long", year:"numeric" });
+  return "Dal " + f(e.dal, { day:"numeric", month:"long" }) + " al " + f(e.al, { day:"numeric", month:"long" });
+}
+
+const FRECCIA = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg>`;
+
+function riga(e) {
   const mappa = `https://www.google.com/maps/search/?api=1&query=${e.lat},${e.lng}`;
-  const esc = s => (s || "").replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
-  return `<article class="card">
-    ${e.immagine ? `<img loading="lazy" src="${esc(e.immagine)}" alt="">` : ""}
-    <div class="quando">${esc(testoData(e))}${e.orario ? " · " + esc(e.orario) : ""}</div>
-    <h3>${esc(e.titolo)}</h3>
-    ${e.sottotitolo ? `<p class="sotto">${esc(e.sottotitolo)}</p>` : ""}
-    <div class="dove">${esc([e.luogo, e.citta].filter(Boolean).join(", "))} · ${Math.round(e.distanza_km)} km</div>
-    ${e.descrizione ? `<p class="desc">${esc(e.descrizione)}</p>` : ""}
-    <div class="meta"><span>${esc(e.categoria)}</span>${e.ingresso ? `<span>${esc(e.ingresso)}</span>` : ""}<span>Fonte: ${esc(e.fonte)}</span></div>
-    <div class="azioni">${e.link ? `<a href="${esc(e.link)}" target="_blank" rel="noopener">Dettagli</a>` : ""}<a href="${mappa}" target="_blank" rel="noopener">Mappa</a></div>
+  const fino = (!e.lungo && e.dal !== e.al) ? ` · fino al ${giorno(e.al).getDate()}` : (e.lungo ? ` · fino al ${breve(giorno(e.al), { day:"numeric", month:"short" })}` : "");
+  return `<article class="ev" data-id="${esc(e._id)}">
+    <button aria-expanded="false">
+      ${e.immagine ? `<img class="foto" loading="lazy" src="${esc(e.immagine)}" alt="" onerror="this.style.visibility='hidden'">` : `<span class="segnaposto" aria-hidden="true">${icona(e.categoria)}</span>`}
+      <div class="corpo">
+        <div class="cat">${esc(e.categoria)}</div>
+        <div class="tit">${esc(e.titolo)}</div>
+        <div class="dove">${esc(e.citta || e.luogo)} · <b>${Math.round(e.distanza_km)} km</b>${e.orario && e.orario.length < 14 ? " · " + esc(e.orario) : ""}${fino}</div>
+      </div>
+      <span class="freccia" aria-hidden="true">${FRECCIA}</span>
+    </button>
+    <div class="dettagli">
+      ${e.immagine ? `<img loading="lazy" src="${esc(e.immagine)}" alt="">` : ""}
+      ${e.sottotitolo ? `<p><b>${esc(e.sottotitolo)}</b></p>` : ""}
+      ${e.descrizione ? `<p>${esc(e.descrizione)}</p>` : ""}
+      <div class="info">
+        <span>${esc(periodo(e))}</span>
+        ${e.orario ? `<span>${esc(e.orario)}</span>` : ""}
+        ${e.luogo ? `<span>${esc(e.luogo)}</span>` : ""}
+        ${e.ingresso ? `<span>${esc(e.ingresso)}</span>` : ""}
+        <span>Fonte: ${esc(e.fonte)}</span>
+      </div>
+      <div class="azioni">
+        ${e.link ? `<a class="pillola piena" href="${esc(e.link)}" target="_blank" rel="noopener">Dettagli &rarr;</a>` : ""}
+        <a class="pillola verde" href="${mappa}" target="_blank" rel="noopener">Come arrivare &rarr;</a>
+      </div>
+    </div>
   </article>`;
 }
 
+function grande(e, d) {
+  return `<button class="grande" data-id="${esc(e._id)}">
+    <div class="img"><img loading="lazy" src="${esc(e.immagine)}" alt=""><span class="pillola tag">${esc(e.categoria)}</span></div>
+    <div class="testo">
+      <div class="quando">${esc(nomeGiorno(d)[0])} · ${esc(breve(d, { day:"numeric", month:"short" }))}</div>
+      <h3>${esc(e.titolo)}</h3>
+      <div class="dove">${esc(e.citta)} · ${Math.round(e.distanza_km)} km</div>
+    </div>
+  </button>`;
+}
+
 function disegna() {
-  const [da, a] = intervallo();
-  const t = stato.testo.trim().toLowerCase();
-  const ok = DATI.eventi.filter(e =>
-    gg(e.al) >= da && gg(e.dal) <= a &&
-    e.distanza_km <= stato.raggio &&
-    (!stato.categoria || e.categoria === stato.categoria) &&
-    (!t || [e.titolo, e.sottotitolo, e.descrizione, e.citta, e.luogo, e.categoria].join(" ").toLowerCase().includes(t)));
-
+  const ok = DATI.eventi.filter(e => passa(e, stato.quando));
+  const [da] = intervallo(stato.quando);
   const brevi = ok.filter(e => !e.lungo), lunghi = ok.filter(e => e.lungo);
-  let html = "";
-  if (brevi.length) html += `<h2>Appuntamenti (${brevi.length})</h2>` + brevi.map(scheda).join("");
-  if (lunghi.length) html += `<h2>Mostre ed eventi lunghi in corso (${lunghi.length})</h2>` + lunghi.map(scheda).join("");
-  document.getElementById("lista").innerHTML = html || `<p class="vuoto">Nessun evento con questi filtri.</p>`;
+  const primoGiorno = e => giorno(e.dal) < da ? da : giorno(e.dal);
+
+  // in evidenza: i piu' vicini nel tempo e nello spazio, solo con foto
+  const scelti = brevi.filter(e => e.immagine)
+    .sort((x, y) => (primoGiorno(x) - primoGiorno(y)) || (x.distanza_km - y.distanza_km)).slice(0, 8);
+  let html = scelti.length >= 2 ? `<section><span class="etichetta">In evidenza</span><h2>Da non perdere</h2>
+    <div class="scorri">${scelti.map(e => grande(e, primoGiorno(e))).join("")}</div></section>` : "";
+
+  const perGiorno = new Map();
+  brevi.forEach(e => {
+    const d = primoGiorno(e), k = iso(d);
+    if (!perGiorno.has(k)) perGiorno.set(k, { d, ev: [] });
+    perGiorno.get(k).ev.push(e);
+  });
+  const giorni = [...perGiorno.keys()].sort();
+  if (giorni.length) html += `<section><span class="etichetta">Calendario</span><h2>Giorno per giorno</h2>` +
+    giorni.map(k => {
+      const g = perGiorno.get(k), [nome, data] = nomeGiorno(g.d);
+      g.ev.sort((x, y) => x.distanza_km - y.distanza_km);
+      return `<div class="giorno ${k === iso(OGGI) ? "oggi" : ""}"><h3>${nome}</h3><span class="etichetta">${data} · ${g.ev.length}</span></div>` +
+             `<div>${g.ev.map(riga).join("")}</div>`;
+    }).join("") + `</section>`;
+
+  if (lunghi.length) {
+    lunghi.sort((x, y) => x.distanza_km - y.distanza_km);
+    html += `<details class="lunghi"><summary><div><span class="etichetta">Sempre aperti</span>
+      <h2>Mostre ed eventi lunghi · ${lunghi.length}</h2></div><span class="pillola"></span></summary>
+      <div>${lunghi.map(riga).join("")}</div></details>`;
+  }
+  document.getElementById("lista").innerHTML = html ||
+    `<div class="vuoto"><span class="etichetta">Niente in vista</span><h2>Nessun evento con questi filtri</h2>Prova ad allargare la distanza o il periodo.</div>`;
 }
 
-function chip(cont, valore, etichetta, attivo, clic) {
-  const b = document.createElement("button");
-  b.className = "chip"; b.textContent = etichetta; b.setAttribute("aria-pressed", attivo);
-  b.onclick = () => { clic(valore); [...cont.children].forEach(c => c.setAttribute("aria-pressed", c === b)); disegna(); };
-  cont.appendChild(b);
+function disegnaCerchi() {
+  const svg = document.getElementById("anelli");
+  svg.innerHTML = RAGGI.map(r => {
+    const rr = r === 100 ? 100 : r === 50 ? 76 : r === 25 ? 52 : 28;   // scala leggibile, non proporzionale
+    const sc = r === stato.raggio ? "scelto" : "";
+    return `<circle class="anello ${sc}" r="${rr}" data-r="${r}"></circle>
+            <text class="${sc}" x="0" y="${rr + 11}" data-r="${r}">${r} km</text>`;
+  }).join("") + `<circle r="3" fill="#e4405f"></circle>`;
 }
+
+function aggiornaPillole() {
+  document.querySelectorAll("#quando .pillola").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === stato.quando));
+}
+
+document.addEventListener("click", ev => {
+  const r = ev.target.closest("[data-r]");
+  if (r) { stato.raggio = Number(r.dataset.r); disegnaCerchi(); disegna();
+           document.getElementById("dove-centro").textContent = `Parma · ${stato.raggio} km`; return; }
+  const q = ev.target.closest(".numeri [data-q]");
+  if (q) { stato.quando = q.dataset.q; aggiornaPillole(); disegna();
+           document.getElementById("lista").scrollIntoView({ behavior:"smooth" }); return; }
+  const g = ev.target.closest(".grande");
+  if (g) {
+    const art = [...document.querySelectorAll(".ev")].find(a => a.dataset.id === g.dataset.id);
+    if (art) { art.classList.add("aperta"); art.scrollIntoView({ behavior:"smooth", block:"center" }); }
+    return;
+  }
+  const b = ev.target.closest(".ev > button");
+  if (b) { const a = b.parentElement; a.classList.toggle("aperta"); b.setAttribute("aria-expanded", a.classList.contains("aperta")); }
+});
 
 async function avvia() {
   try {
-    const r = await fetch("eventi.json", { cache: "no-cache" });
-    DATI = await r.json();
-  } catch (err) {
-    document.getElementById("info").textContent = "Impossibile caricare gli eventi.";
+    DATI = await (await fetch("eventi.json", { cache:"no-cache" })).json();
+  } catch {
+    document.getElementById("info").textContent = "Impossibile caricare gli eventi. Controlla la connessione.";
     return;
   }
-  document.getElementById("info").textContent =
-    `${DATI.eventi.length} eventi entro ${DATI.raggio_km} km · aggiornato il ${DATI.aggiornato}`;
-  document.getElementById("piede").textContent =
-    "Fonti: " + Object.entries(DATI.fonti).map(([k, v]) => `${k} (${v})`).join(", ");
+  DATI.eventi.forEach((e, i) => e._id = "e" + i);
+  document.getElementById("info").textContent = `Aggiornato il ${DATI.aggiornato}`;
+  const conta = q => DATI.eventi.filter(e => !e.lungo && passa(e, q, true)).length;
+  document.getElementById("n-oggi").textContent = conta("oggi");
+  document.getElementById("n-weekend").textContent = conta("weekend");
+  document.getElementById("n-mese").textContent = conta("30");
+  document.getElementById("piede").textContent = "Fonti: " +
+    Object.keys(DATI.fonti).filter(k => typeof DATI.fonti[k] === "number" && DATI.fonti[k] > 0).join(", ") +
+    ". Date e orari possono cambiare: controlla sempre sul sito dell'organizzatore.";
 
   const q = document.getElementById("quando");
-  FILTRI_QUANDO.forEach(([v, et]) => chip(q, v, et, v === stato.quando, x => stato.quando = x));
+  QUANDO.forEach(([v, t]) => {
+    const b = document.createElement("button");
+    b.className = "pillola"; b.dataset.v = v; b.textContent = t;
+    b.onclick = () => { stato.quando = v; aggiornaPillole(); disegna(); };
+    q.appendChild(b);
+  });
+  aggiornaPillole();
 
   const c = document.getElementById("categorie");
-  const conta = {};
-  DATI.eventi.forEach(e => conta[e.categoria] = (conta[e.categoria] || 0) + 1);
-  chip(c, null, "Tutte le categorie", true, x => stato.categoria = x);
-  Object.keys(conta).sort((x, y) => conta[y] - conta[x]).forEach(k => chip(c, k, k, false, x => stato.categoria = x));
+  const n = {}; DATI.eventi.forEach(e => n[e.categoria] = (n[e.categoria] || 0) + 1);
+  [[null, "Tutte"], ...Object.keys(n).sort((a, b) => n[b] - n[a]).map(k => [k, `<span aria-hidden="true">${icona(k)}</span>${esc(k)}`])]
+    .forEach(([v, t]) => {
+      const b = document.createElement("button");
+      b.className = "pillola"; b.innerHTML = t; b.setAttribute("aria-pressed", v === null);
+      b.onclick = () => { stato.categoria = v; c.querySelectorAll(".pillola").forEach(x => x.setAttribute("aria-pressed", x === b)); disegna(); };
+      c.appendChild(b);
+    });
 
-  document.getElementById("raggio").onchange = ev => { stato.raggio = Number(ev.target.value); disegna(); };
-  document.getElementById("cerca").oninput = ev => { stato.testo = ev.target.value; disegna(); };
+  document.getElementById("cerca").oninput = e => { stato.testo = e.target.value; disegna(); };
+  disegnaCerchi();
   disegna();
 }
 
