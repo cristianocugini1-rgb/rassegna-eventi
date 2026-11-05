@@ -1,0 +1,18 @@
+[
+  {
+    "_istruzioni": "Copia questo blocco per ogni evento segnalato a mano. Le righe che iniziano con _ vengono ignorate. Le coordinate si prendono da Google Maps (tasto destro sul punto, primo numero = lat, secondo = lng).",
+    "_esempio": true,
+    "titolo": "Esempio: Sagra della torta fritta",
+    "categoria": "Eventi enogastronomici",
+    "luogo": "Piazza Garibaldi",
+    "citta": "Parma",
+    "lat": 44.8015,
+    "lng": 10.3279,
+    "dal": "2026-11-15",
+    "al": "2026-11-16",
+    "orario": "dalle 18",
+    "ingresso": "Gratuito",
+    "link": "",
+    "descrizione": "Riga di descrizione breve."
+  }
+]

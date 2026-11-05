@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Eventi attorno a Parma</title>
+<meta name="theme-color" content="#1f3a5f">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icona.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icona-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Eventi">
+<style>
+  :root { --blu:#1f3a5f; --chiaro:#f4f1ea; --testo:#1d1d1d; --grigio:#5d5d5d; --accento:#c4572b; }
+  * { box-sizing:border-box; }
+  html, body { overflow-x:hidden; }
+  .card { overflow-wrap:anywhere; }
+  body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--chiaro); color:var(--testo); }
+  header { background:var(--blu); color:#fff; padding:calc(env(safe-area-inset-top) + 14px) 16px 12px; position:sticky; top:0; z-index:5; }
+  header h1 { margin:0; font-size:1.25rem; }
+  header p { margin:2px 0 10px; font-size:.85rem; opacity:.85; }
+  input[type=search] { width:100%; padding:10px 12px; border-radius:10px; border:0; font-size:1rem; }
+  .riga { display:flex; gap:8px; overflow-x:auto; padding:10px 16px 2px; scrollbar-width:none; }
+  .riga::-webkit-scrollbar { display:none; }
+  .chip { flex:0 0 auto; border:1.5px solid var(--blu); background:#fff; color:var(--blu); border-radius:999px; padding:6px 12px; font-size:.9rem; cursor:pointer; }
+  .chip[aria-pressed=true] { background:var(--blu); color:#fff; }
+  main { padding:8px 16px calc(env(safe-area-inset-bottom) + 24px); max-width:760px; margin:0 auto; }
+  h2 { font-size:1rem; color:var(--blu); margin:22px 0 8px; border-bottom:2px solid var(--blu); padding-bottom:4px; }
+  .card { background:#fff; border-radius:12px; padding:12px 14px; margin:10px 0; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+  .card img { width:100%; aspect-ratio:2/1; object-fit:cover; border-radius:8px; margin-bottom:8px; background:#ddd; }
+  .quando { font-weight:700; color:var(--accento); font-size:.9rem; }
+  .card h3 { margin:4px 0 2px; font-size:1.05rem; }
+  .sotto { color:var(--grigio); font-size:.9rem; margin:0 0 6px; }
+  .dove { font-size:.9rem; }
+  .desc { font-size:.9rem; line-height:1.4; margin:6px 0; }
+  .meta { display:flex; flex-wrap:wrap; gap:6px; font-size:.78rem; margin:6px 0; }
+  .meta span { background:var(--chiaro); border-radius:6px; padding:2px 8px; }
+  .azioni { display:flex; gap:14px; margin-top:6px; }
+  .azioni a { color:var(--blu); font-weight:600; font-size:.9rem; }
+  .vuoto { text-align:center; color:var(--grigio); padding:40px 10px; }
+  footer { font-size:.75rem; color:var(--grigio); text-align:center; padding:10px; }
+  select { padding:6px 10px; border-radius:999px; border:1.5px solid var(--blu); color:var(--blu); background:#fff; font-size:.9rem; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Eventi attorno a Parma</h1>
+  <p id="info">Caricamento...</p>
+  <input type="search" id="cerca" placeholder="Cerca: sagra, concerto, Reggio..." aria-label="Cerca eventi">
+</header>
+
+<div class="riga" id="quando" role="group" aria-label="Quando"></div>
+<div class="riga">
+  <label for="raggio" style="align-self:center;font-size:.9rem">Distanza</label>
+  <select id="raggio">
+    <option value="10">entro 10 km</option>
+    <option value="25">entro 25 km</option>
+    <option value="50">entro 50 km</option>
+    <option value="100" selected>entro 100 km</option>
+  </select>
+</div>
+<div class="riga" id="categorie" role="group" aria-label="Categorie"></div>
+
+<main id="lista"></main>
+<footer id="piede"></footer>
+
+<script>
+const FILTRI_QUANDO = [
+  ["oggi", "Oggi"], ["weekend", "Questo weekend"], ["7", "Prossimi 7 giorni"],
+  ["30", "Prossimi 30 giorni"], ["tutto", "Tutto"]
+];
+const stato = { quando: "30", categoria: null, raggio: 100, testo: "" };
+let DATI = null;
+
+const gg = d => { const x = new Date(d + "T12:00:00"); x.setHours(0,0,0,0); return x; };
+const oggi = () => { const x = new Date(); x.setHours(0,0,0,0); return x; };
+const fmt = (d, opz) => gg(d).toLocaleDateString("it-IT", opz);
+
+function intervallo() {
+  const o = oggi(), fine = new Date(o);
+  if (stato.quando === "oggi") return [o, o];
+  if (stato.quando === "weekend") {
+    const g = o.getDay();               // 0 domenica, 6 sabato
+    const inizio = new Date(o);
+    if (g >= 1 && g <= 4) inizio.setDate(o.getDate() + (5 - g)); // da venerdi'
+    const dom = new Date(o); dom.setDate(o.getDate() + ((7 - g) % 7));
+    return [inizio, dom];
+  }
+  if (stato.quando === "tutto") { fine.setFullYear(o.getFullYear() + 5); return [o, fine]; }
+  fine.setDate(o.getDate() + Number(stato.quando)); return [o, fine];
+}
+
+function testoData(e) {
+  if (e.dal === e.al) return fmt(e.dal, { weekday:"long", day:"numeric", month:"long" });
+  const inCorso = gg(e.dal) <= oggi();
+  const al = fmt(e.al, { day:"numeric", month:"long", year: gg(e.al).getFullYear() !== oggi().getFullYear() ? "numeric" : undefined });
+  return inCorso ? "In corso, fino al " + al : "Dal " + fmt(e.dal, { day:"numeric", month:"long" }) + " al " + al;
+}
+
+function scheda(e) {
+  const mappa = `https://www.google.com/maps/search/?api=1&query=${e.lat},${e.lng}`;
+  const esc = s => (s || "").replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+  return `<article class="card">
+    ${e.immagine ? `<img loading="lazy" src="${esc(e.immagine)}" alt="">` : ""}
+    <div class="quando">${esc(testoData(e))}${e.orario ? " · " + esc(e.orario) : ""}</div>
+    <h3>${esc(e.titolo)}</h3>
+    ${e.sottotitolo ? `<p class="sotto">${esc(e.sottotitolo)}</p>` : ""}
+    <div class="dove">${esc([e.luogo, e.citta].filter(Boolean).join(", "))} · ${Math.round(e.distanza_km)} km</div>
+    ${e.descrizione ? `<p class="desc">${esc(e.descrizione)}</p>` : ""}
+    <div class="meta"><span>${esc(e.categoria)}</span>${e.ingresso ? `<span>${esc(e.ingresso)}</span>` : ""}<span>Fonte: ${esc(e.fonte)}</span></div>
+    <div class="azioni">${e.link ? `<a href="${esc(e.link)}" target="_blank" rel="noopener">Dettagli</a>` : ""}<a href="${mappa}" target="_blank" rel="noopener">Mappa</a></div>
+  </article>`;
+}
+
+function disegna() {
+  const [da, a] = intervallo();
+  const t = stato.testo.trim().toLowerCase();
+  const ok = DATI.eventi.filter(e =>
+    gg(e.al) >= da && gg(e.dal) <= a &&
+    e.distanza_km <= stato.raggio &&
+    (!stato.categoria || e.categoria === stato.categoria) &&
+    (!t || [e.titolo, e.sottotitolo, e.descrizione, e.citta, e.luogo, e.categoria].join(" ").toLowerCase().includes(t)));
+
+  const brevi = ok.filter(e => !e.lungo), lunghi = ok.filter(e => e.lungo);
+  let html = "";
+  if (brevi.length) html += `<h2>Appuntamenti (${brevi.length})</h2>` + brevi.map(scheda).join("");
+  if (lunghi.length) html += `<h2>Mostre ed eventi lunghi in corso (${lunghi.length})</h2>` + lunghi.map(scheda).join("");
+  document.getElementById("lista").innerHTML = html || `<p class="vuoto">Nessun evento con questi filtri.</p>`;
+}
+
+function chip(cont, valore, etichetta, attivo, clic) {
+  const b = document.createElement("button");
+  b.className = "chip"; b.textContent = etichetta; b.setAttribute("aria-pressed", attivo);
+  b.onclick = () => { clic(valore); [...cont.children].forEach(c => c.setAttribute("aria-pressed", c === b)); disegna(); };
+  cont.appendChild(b);
+}
+
+async function avvia() {
+  try {
+    const r = await fetch("eventi.json", { cache: "no-cache" });
+    DATI = await r.json();
+  } catch (err) {
+    document.getElementById("info").textContent = "Impossibile caricare gli eventi.";
+    return;
+  }
+  document.getElementById("info").textContent =
+    `${DATI.eventi.length} eventi entro ${DATI.raggio_km} km · aggiornato il ${DATI.aggiornato}`;
+  document.getElementById("piede").textContent =
+    "Fonti: " + Object.entries(DATI.fonti).map(([k, v]) => `${k} (${v})`).join(", ");
+
+  const q = document.getElementById("quando");
+  FILTRI_QUANDO.forEach(([v, et]) => chip(q, v, et, v === stato.quando, x => stato.quando = x));
+
+  const c = document.getElementById("categorie");
+  const conta = {};
+  DATI.eventi.forEach(e => conta[e.categoria] = (conta[e.categoria] || 0) + 1);
+  chip(c, null, "Tutte le categorie", true, x => stato.categoria = x);
+  Object.keys(conta).sort((x, y) => conta[y] - conta[x]).forEach(k => chip(c, k, k, false, x => stato.categoria = x));
+
+  document.getElementById("raggio").onchange = ev => { stato.raggio = Number(ev.target.value); disegna(); };
+  document.getElementById("cerca").oninput = ev => { stato.testo = ev.target.value; disegna(); };
+  disegna();
+}
+
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+avvia();
+</script>
+</body>
+</html>

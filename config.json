@@ -1,0 +1,6 @@
+{
+  "centro": {"nome": "Parma", "lat": 44.8015, "lng": 10.3279},
+  "raggio_km": 100,
+  "giorni_avanti": 60,
+  "durata_max_appuntamento_giorni": 4
+}

@@ -1,0 +1,3 @@
+# generato ogni mattina da GitHub, non si salva nel repository
+app/eventi.json
+__pycache__/

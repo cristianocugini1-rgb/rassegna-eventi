@@ -1,0 +1,41 @@
+name: Aggiorna eventi e pubblica l'app
+
+on:
+  schedule:
+    - cron: "0 5 * * *"   # ogni giorno alle 5:00 UTC (6:00 in inverno, 7:00 in estate, ora italiana)
+  workflow_dispatch:       # pulsante "Run workflow" per aggiornare a mano
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  aggiorna:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.pubblica.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Raccogli gli eventi
+        env:
+          TICKETMASTER_KEY: ${{ secrets.TICKETMASTER_KEY }}
+          TZ: Europe/Rome
+        run: python raccogli.py
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: app
+      - name: Pubblica
+        id: pubblica
+        uses: actions/deploy-pages@v4
