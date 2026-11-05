@@ -52,12 +52,15 @@
   .aggiornato { font-size:.74rem; color:var(--tenue); margin:10px 0 0; }
 
   /* barra sottile con i menu a tendina */
-  .barra { position:sticky; top:0; z-index:20; background:rgba(19,20,25,.9); backdrop-filter:blur(12px);
-           -webkit-backdrop-filter:blur(12px); border-bottom:1px solid var(--linea);
+  .barra { position:sticky; top:0; z-index:20; backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+           background:
+             linear-gradient(180deg, rgba(13,13,18,.18), rgba(13,13,18,.32)),
+             linear-gradient(90deg, #ff4d6d 0%, #ff9f43 17%, #ffe14d 33%, #5fe08a 50%, #3fc8ff 67%, #6a7bff 83%, #b86bff 100%);
+           border-bottom:1px solid rgba(255,255,255,.2);
            padding:calc(env(safe-area-inset-top) * .4 + 10px) 14px 10px; }
   .barra .file { display:flex; gap:8px; max-width:760px; margin:0 auto; }
   .tendina { flex:1; min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:1px; text-align:left;
-             background:var(--carta); border:1px solid var(--linea); border-radius:14px; padding:7px 34px 7px 13px;
+             background:rgba(16,16,22,.78); border:1px solid rgba(255,255,255,.22); border-radius:14px; padding:7px 34px 7px 13px;
              color:var(--bianco); cursor:pointer; position:relative; }
   .tendina small { font-size:.62rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--tenue); }
   .tendina span { font-size:.92rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
@@ -67,7 +70,7 @@
   .tendina[aria-expanded=true] { border-color:var(--accento); }
   .tendina[aria-expanded=true]::after { transform:rotate(225deg); margin-top:-1px; border-color:var(--accento); }
   .tendina.attiva span { color:var(--accento); }
-  .lente { flex:0 0 48px; border-radius:14px; border:1px solid var(--linea); background:var(--carta); cursor:pointer;
+  .lente { flex:0 0 48px; border-radius:14px; border:1px solid rgba(255,255,255,.22); background:rgba(16,16,22,.78); cursor:pointer;
            display:grid; place-items:center; color:var(--bianco); }
   .lente[aria-expanded=true], .lente.attiva { border-color:var(--accento); color:var(--accento); }
   .cerca { max-width:760px; margin:8px auto 0; display:none; }
@@ -95,19 +98,28 @@
   section > h2 { margin:0 0 14px; font:400 1.9rem/1.1 var(--serif); letter-spacing:-.01em; }
 
   /* in evidenza */
-  .scorri { display:flex; gap:14px; overflow-x:auto; scroll-snap-type:x mandatory; margin:0 -16px; padding:0 16px 6px; scrollbar-width:none; }
+  /* da un bordo all'altro dello schermo, anche quando la pagina e' piu' stretta della finestra */
+  .scorri { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none;
+            width:100vw; margin-left:calc(50% - 50vw); }
   .scorri::-webkit-scrollbar { display:none; }
-  .grande { flex:0 0 80%; max-width:340px; scroll-snap-align:start; background:var(--carta); border-radius:20px; overflow:hidden;
-            cursor:pointer; border:0; padding:0; text-align:left; color:var(--bianco); }
-  .grande .img { position:relative; aspect-ratio:4/3; background:var(--carta2); }
-  .grande img { width:100%; height:100%; object-fit:cover; display:block; }
-  .grande .tag { position:absolute; top:12px; right:12px; background:rgba(19,20,25,.6); backdrop-filter:blur(6px);
+  .grande { flex:0 0 100vw; scroll-snap-align:center; scroll-snap-stop:always; position:relative; overflow:hidden;
+            cursor:pointer; border:0; padding:0; text-align:left; color:var(--bianco); background:var(--carta2);
+            height:min(118vw, 560px); }
+  @media (min-width:820px) { .grande { flex-basis:50vw; height:440px; } }
+  .grande img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+  .grande::after { content:""; position:absolute; inset:0; pointer-events:none;
+                   background:linear-gradient(180deg, rgba(10,10,14,.35) 0%, transparent 28%, transparent 45%, rgba(10,10,14,.92) 100%); }
+  .grande .tag { position:absolute; top:16px; right:16px; z-index:2; background:rgba(19,20,25,.55); backdrop-filter:blur(6px);
                  -webkit-backdrop-filter:blur(6px); font-size:.64rem; font-weight:800; letter-spacing:.12em;
-                 text-transform:uppercase; padding:7px 12px; border-color:rgba(255,255,255,.5); }
-  .grande .testo { padding:14px 16px 18px; }
-  .grande .quando { font-size:.72rem; color:var(--accento); font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
-  .grande h3 { margin:6px 0 4px; font:400 1.3rem/1.2 var(--serif); }
-  .grande .dove { font-size:.86rem; color:var(--tenue); }
+                 text-transform:uppercase; padding:7px 12px; border-color:rgba(255,255,255,.55); }
+  .grande .testo { position:absolute; left:0; right:0; bottom:0; z-index:2; padding:0 22px 26px; }
+  .grande .quando { font-size:.74rem; color:#ffe14d; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
+  .grande h3 { margin:8px 0 6px; font:400 clamp(1.6rem, 7vw, 2.2rem)/1.1 var(--serif); letter-spacing:-.01em;
+               text-shadow:0 2px 14px rgba(0,0,0,.6); }
+  .grande .dove { font-size:.9rem; color:#d9dae0; }
+  .puntini { display:flex; justify-content:center; gap:7px; margin-top:14px; }
+  .puntini i { width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,.25); transition:all .25s; }
+  .puntini i.su { width:22px; border-radius:4px; background:linear-gradient(90deg, #ffe14d, #45f0b8); }
 
   /* giorni a tendina */
   details.giorno { border-top:1px solid var(--linea); }
@@ -316,7 +328,7 @@ function scheda(e) {
 
 function grande(e, d) {
   return `<button class="grande" data-vai="${e._id}" data-giornovai="${iso(d)}">
-    <div class="img"><img loading="lazy" src="${esc(e.immagine)}" alt="" onerror="${NASCONDI}"><span class="pillola tag">${esc(e.categoria)}</span></div>
+    <img loading="lazy" src="${esc(e.immagine)}" alt="" onerror="${NASCONDI}"><span class="pillola tag">${esc(e.categoria)}</span>
     <div class="testo">
       <div class="quando">${esc(nomeGiorno(d)[0])} · ${esc(breve(d, { day:"numeric", month:"short" }))}</div>
       <h3>${esc(e.titolo)}</h3>
@@ -340,7 +352,8 @@ function disegna() {
   const scelti = brevi.filter(e => e.immagine)
     .sort((x, y) => (primo(x) - primo(y)) || (x.distanza_km - y.distanza_km)).slice(0, 8);
   let html = scelti.length >= 2 ? `<section><span class="etichetta">In evidenza</span><h2>Da non perdere</h2>
-    <div class="scorri">${scelti.map(e => grande(e, primo(e))).join("")}</div></section>` : "";
+    <div class="scorri" id="scorri">${scelti.map(e => grande(e, primo(e))).join("")}</div>
+    <div class="puntini" aria-hidden="true">${scelti.map((_, i) => `<i class="${i ? "" : "su"}"></i>`).join("")}</div></section>` : "";
 
   // per il calendario: ogni appuntamento compare in tutti i giorni in cui si svolge
   const [, fine] = intervallo(stato.quando);
@@ -366,6 +379,11 @@ function disegna() {
   document.getElementById("lista").innerHTML = html ||
     `<div class="vuoto"><span class="etichetta">Niente in vista</span><h2>Nessun evento con questi filtri</h2>Prova ad allargare la distanza o il periodo.</div>`;
   if (document.getElementById("cal")) disegnaCal();
+  const sc = document.getElementById("scorri");
+  if (sc) sc.onscroll = () => {
+    const i = Math.round(sc.scrollLeft / sc.firstElementChild.offsetWidth);
+    sc.nextElementSibling.querySelectorAll("i").forEach((p, j) => p.classList.toggle("su", j === i));
+  };
 }
 
 /* ---------- calendario ---------- */
