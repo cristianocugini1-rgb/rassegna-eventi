@@ -99,13 +99,26 @@
 
   /* in evidenza */
   /* da un bordo all'altro dello schermo, anche quando la pagina e' piu' stretta della finestra */
-  .scorri { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none;
-            width:100vw; margin-left:calc(50% - 50vw); }
+  .giostra { position:relative; width:100vw; margin-left:calc(50% - 50vw); }
+  .scorri { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; scroll-behavior:smooth; }
   .scorri::-webkit-scrollbar { display:none; }
-  .grande { flex:0 0 100vw; scroll-snap-align:center; scroll-snap-stop:always; position:relative; overflow:hidden;
+  .grande { flex:0 0 100%; scroll-snap-align:start; scroll-snap-stop:always; position:relative; overflow:hidden;
             cursor:pointer; border:0; padding:0; text-align:left; color:var(--bianco); background:var(--carta2);
             height:min(118vw, 560px); }
-  @media (min-width:820px) { .grande { flex-basis:50vw; height:440px; } }
+  @media (min-width:560px) { .grande { flex-basis:50%; height:440px; } }
+  /* sul computer quattro schede per schermata */
+  @media (min-width:900px) { .grande { flex-basis:25%; height:420px; }
+                             .scorri .grande h3 { font-size:1.5rem; } .scorri .grande .testo { padding:0 18px 22px 18px; } }
+  /* frecce: bollino grigio trasparente, freccia in trasparenza */
+  .freccia { position:absolute; top:50%; transform:translateY(-50%); z-index:3; width:50px; height:50px;
+             border-radius:50%; border:0; padding:0; display:grid; place-items:center; cursor:pointer;
+             background:rgba(140,140,150,.32); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+             color:rgba(255,255,255,.7); transition:opacity .25s, background .2s, color .2s; }
+  .freccia:hover { background:rgba(140,140,150,.5); color:rgba(255,255,255,.95); }
+  .freccia svg { width:22px; height:22px; }
+  .freccia.sx { left:16px; } .freccia.dx { right:16px; }
+  .freccia[disabled] { opacity:0; pointer-events:none; }
+  @media (max-width:559px) { .freccia { width:40px; height:40px; } .freccia.sx { left:10px; } .freccia.dx { right:10px; } }
   .grande img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
   .grande::after { content:""; position:absolute; inset:0; pointer-events:none;
                    background:linear-gradient(180deg, rgba(10,10,14,.35) 0%, transparent 28%, transparent 45%, rgba(10,10,14,.92) 100%); }
@@ -350,9 +363,13 @@ function disegna() {
   const primo = e => giorno(e.dal) < da ? da : giorno(e.dal);
 
   const scelti = brevi.filter(e => e.immagine)
-    .sort((x, y) => (primo(x) - primo(y)) || (x.distanza_km - y.distanza_km)).slice(0, 8);
+    .sort((x, y) => (primo(x) - primo(y)) || (x.distanza_km - y.distanza_km)).slice(0, 12);
+  const freccia = (lato, giro, nome) => `<button class="freccia ${lato}" data-sposta="${giro}" aria-label="${nome}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="${giro < 0 ? "M15 5l-7 7 7 7" : "M9 5l7 7-7 7"}"/></svg></button>`;
   let html = scelti.length >= 2 ? `<section><span class="etichetta">In evidenza</span><h2>Da non perdere</h2>
-    <div class="scorri" id="scorri">${scelti.map(e => grande(e, primo(e))).join("")}</div>
+    <div class="giostra"><div class="scorri" id="scorri">${scelti.map(e => grande(e, primo(e))).join("")}</div>
+    ${freccia("sx", -1, "Eventi precedenti")}${freccia("dx", 1, "Eventi successivi")}</div>
     <div class="puntini" aria-hidden="true">${scelti.map((_, i) => `<i class="${i ? "" : "su"}"></i>`).join("")}</div></section>` : "";
 
   // per il calendario: ogni appuntamento compare in tutti i giorni in cui si svolge
@@ -380,10 +397,20 @@ function disegna() {
     `<div class="vuoto"><span class="etichetta">Niente in vista</span><h2>Nessun evento con questi filtri</h2>Prova ad allargare la distanza o il periodo.</div>`;
   if (document.getElementById("cal")) disegnaCal();
   const sc = document.getElementById("scorri");
-  if (sc) sc.onscroll = () => {
-    const i = Math.round(sc.scrollLeft / sc.firstElementChild.offsetWidth);
-    sc.nextElementSibling.querySelectorAll("i").forEach((p, j) => p.classList.toggle("su", j === i));
-  };
+  if (sc) {
+    const giostra = sc.parentElement, puntini = giostra.nextElementSibling;
+    const [sx, dx] = giostra.querySelectorAll(".freccia");
+    const aggiorna = () => {
+      const i = Math.round(sc.scrollLeft / sc.firstElementChild.offsetWidth);
+      puntini.querySelectorAll("i").forEach((p, j) => p.classList.toggle("su", j === i));
+      sx.disabled = sc.scrollLeft < 4;
+      dx.disabled = sc.scrollLeft + sc.clientWidth >= sc.scrollWidth - 4;
+    };
+    sc.onscroll = aggiorna;
+    giostra.querySelectorAll(".freccia").forEach(b => b.onclick = () =>
+      sc.scrollBy({ left: Number(b.dataset.sposta) * sc.firstElementChild.offsetWidth, behavior: "smooth" }));
+    aggiorna();
+  }
 }
 
 /* ---------- calendario ---------- */
