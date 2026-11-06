@@ -40,10 +40,23 @@
   .marchio span { font-size:.78rem; color:var(--tenue); }
   .cerchi { position:relative; width:min(88vw, 400px); aspect-ratio:220/232; margin:12px auto 0; }
   .cerchi svg { position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
-  .cerchi circle.anello { fill:none; stroke:rgba(255,255,255,.26); stroke-width:1; cursor:pointer; transition:stroke .2s; }
+  /* ogni distanza e' una fascia intera da toccare, non solo la linea */
+  .cerchi .zona { cursor:pointer; }
+  .cerchi .fascia { fill:rgba(255,255,255,0); fill-rule:evenodd; transition:fill .2s; }
+  .cerchi circle.anello { fill:none; stroke:rgba(255,255,255,.26); stroke-width:1; pointer-events:none; transition:stroke .2s, stroke-width .2s; }
   .cerchi circle.anello.scelto { stroke:var(--accento); stroke-width:1.6; }
-  .cerchi text { fill:var(--tenue); font-size:10px; text-anchor:middle; font-family:var(--sans); cursor:pointer; }
+  .cerchi text { fill:var(--tenue); font-size:10px; text-anchor:middle; font-family:var(--sans); transition:fill .2s; }
   .cerchi text.scelto { fill:var(--accento); font-weight:800; }
+  @media (hover:hover) {
+    .cerchi .zona:hover .fascia { fill:rgba(255,255,255,.07); }
+    .cerchi .zona:hover circle.anello { stroke:rgba(255,255,255,.7); stroke-width:1.4; }
+    .cerchi .zona:hover circle.anello.scelto { stroke:var(--accento); }
+    .cerchi .zona:hover text { fill:var(--bianco); }
+    .cerchi .zona:hover text.scelto { fill:var(--accento); }
+  }
+  /* area del raggio scelto, piena come un radar */
+  .cerchi .radar { pointer-events:none; filter:drop-shadow(0 0 10px rgba(69,240,184,.25)); }
+  .cerchi .onda { pointer-events:none; fill:none; stroke:var(--accento); stroke-width:2; }
   .cerchi h1 { position:absolute; inset:0 0 5% 0; margin:auto; height:max-content; pointer-events:none;
                font:400 clamp(2rem, 9vw, 2.8rem)/1.02 var(--serif); letter-spacing:-.02em; }
   .cerchi h1 i { color:var(--accento); }
@@ -483,12 +496,30 @@ function riempiCategorie() {
 
 function aggiornaTutto() { riempiQuando(); riempiCategorie(); disegna(); }
 
-function disegnaCerchi() {
-  document.getElementById("anelli").innerHTML = RAGGI.map(r => {
-    const rr = { 10:28, 25:52, 50:76, 100:100 }[r];   // scala leggibile, non proporzionale
+function disegnaCerchi(onda = false) {
+  const SCALA = { 10:28, 25:52, 50:76, 100:100 };   // scala leggibile, non proporzionale
+  const tondo = (r, verso) => r ? `M${r} 0A${r} ${r} 0 1 ${verso} ${-r} 0A${r} ${r} 0 1 ${verso} ${r} 0Z` : "";
+  const sr = SCALA[stato.raggio];
+  // il disco pieno del raggio scelto, sotto le fasce
+  let svg = `<defs><radialGradient id="radar-grad" r="50%">
+      <stop offset="0%" stop-color="#45f0b8" stop-opacity=".30"/>
+      <stop offset="70%" stop-color="#45f0b8" stop-opacity=".12"/>
+      <stop offset="100%" stop-color="#45f0b8" stop-opacity=".22"/></radialGradient></defs>
+    <circle class="radar" r="${sr}" fill="url(#radar-grad)">
+      ${onda ? `<animate attributeName="r" from="${sr * .82}" to="${sr}" dur=".35s" begin="indefinite" fill="freeze"/>` : ""}</circle>`;
+  // una fascia per distanza: l'anello tra questo cerchio e quello piu' piccolo
+  svg += RAGGI.map((r, i) => {
+    const rr = SCALA[r], dentro = i ? SCALA[RAGGI[i - 1]] : 0;
     const sc = r === stato.raggio ? "scelto" : "";
-    return `<circle class="anello ${sc}" r="${rr}" data-r="${r}"></circle><text class="${sc}" x="0" y="${rr + 11}" data-r="${r}">${r} km</text>`;
-  }).join("") + `<circle r="3" fill="#e4405f"></circle>`;
+    return `<g class="zona" data-r="${r}" role="button" aria-label="Eventi entro ${r} km">
+      <path class="fascia" d="${tondo(rr, 0)}${tondo(dentro, 1)}"></path>
+      <circle class="anello ${sc}" r="${rr}"></circle><text class="${sc}" x="0" y="${rr + 11}">${r} km</text></g>`;
+  }).join("");
+  // al tocco un'onda parte dal centro e arriva al cerchio scelto
+  if (onda) svg += `<circle class="onda" r="0"><animate attributeName="r" from="0" to="${sr}" dur=".6s" begin="indefinite" fill="freeze"/>
+    <animate attributeName="opacity" from=".9" to="0" dur=".6s" begin="indefinite" fill="freeze"/></circle>`;
+  document.getElementById("anelli").innerHTML = svg + `<circle r="3" fill="#e4405f" pointer-events="none"></circle>`;
+  document.querySelectorAll("#anelli animate").forEach(a => a.beginElement());
   document.getElementById("dove-centro").textContent = `Parma · ${stato.raggio} km`;
 }
 
@@ -516,7 +547,7 @@ document.addEventListener("click", ev => {
     return;
   }
   const r = t.closest("[data-r]");
-  if (r) { stato.raggio = Number(r.dataset.r); disegnaCerchi(); aggiornaTutto(); return; }
+  if (r) { stato.raggio = Number(r.dataset.r); disegnaCerchi(true); aggiornaTutto(); return; }
   const q = t.closest(".numeri [data-q]");
   if (q) { stato.quando = q.dataset.q; aggiornaTutto(); document.getElementById("barra").scrollIntoView({ behavior:"smooth" }); return; }
   const gg = t.closest("[data-giorno]");
